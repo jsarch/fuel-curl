@@ -174,33 +174,47 @@ class Curl
 
 	public function post($params = array(), $options = array())
 	{
-		$this->_prepare('post', $params, $options);
-		$this->add_curl_option(CURLOPT_POST, TRUE);
-	}
-
-	public function put($params = array(), $options = array())
-	{
-		$this->_prepare('put', $params, $options);
-
-		// Override method, I think this overrides $_POST with PUT data but... we'll see eh?
-		$this->add_curl_option(CURLOPT_HTTPHEADER, array('X-HTTP-Method-Override: PUT'));
-	}
-
-	public function delete($params = array(), $options = array())
-	{
-		$this->_prepare('delete', $params, $options);
-	}
-
-	private function _prepare($method, $params, $options)
-	{
-		$this->set_http_method($method);
+		$this->set_http_method('post');
+		$options[CURLOPT_POST] = TRUE;
 
 		// If its an array (instead of a query string) then format it correctly
 		if (is_array($params))
 		{
 			$params = http_build_query($params, NULL, '&');
 		}
-		$this->add_curl_option(CURLOPT_POSTFIELDS, $params);
+		$options[CURLOPT_POSTFIELDS] = $params;
+
+		// Add in the specific options provided
+		$this->add_curl_options($options);
+	}
+
+	public function put($params = array(), $options = array())
+	{
+		$this->set_http_method('put');
+		$options[CURLOPT_PUT] = TRUE;
+
+		// If its an array (instead of a query string) then format it correctly
+		if (is_array($params))
+		{
+			$params = http_build_query($params, NULL, '&');
+		}
+		$options[CURLOPT_INFILE] = $params;
+		$options[CURLOPT_INFILESIZE] = strlen($params);
+
+		// Add in the specific options provided
+		$this->add_curl_options($options);
+	}
+
+	public function delete($params = array(), $options = array())
+	{
+		$this->set_http_method('delete');
+
+		// If its an array (instead of a query string) then format it correctly
+		if (is_array($params))
+		{
+			$params = http_build_query($params, NULL, '&');
+		}
+		$options[CURLOPT_POSTFIELDS] = $params;
 
 		// Add in the specific options provided
 		$this->add_curl_options($options);
