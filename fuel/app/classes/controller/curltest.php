@@ -25,11 +25,34 @@ class Controller_CurlTest extends Controller {
 		echo 'Curl is enabled: '. (Curl::is_enabled()) ? 'yes' : 'no';
 	}
 
+	public function action_perftest()
+	{
+		$curl = new Curl();
+		$fuel_start_time = microtime(true);
+
+		$curl->simple_get("http://www.example.com");
+		$info = $curl->info();
+		$curl_total_time = $info['total_time'];
+
+		$curl->simple_get("http://www.google.com");
+		$info = $curl->info();
+		$curl_total_time += $info['total_time'];
+
+		$fuel_total_time = microtime(true) - $fuel_start_time;
+
+		print("<pre>");
+		print("Fuel total time: $fuel_total_time\n");
+		print("Curl total_time: $curl_total_time\n");
+		print('Diff total time: '.($fuel_total_time - $curl_total_time)."\n");
+		print("</pre>");
+	}
+
 	public function action_simpleget()
 	{
 		$curl = new Curl();
-		$curl->simple_get("http://www.example.com");
-		var_dump($curl->response());
+		$curl->simple_get("http://www.localhost");
+		$curl->debug();
+		// var_dump($curl->response());
 		// $this->render('welcome/index');
 	}
 

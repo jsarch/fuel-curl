@@ -24,21 +24,21 @@ namespace Fuel\Core;
  */
 class Curl
 {
-	protected $_url			= null;
-	protected $_username	= '';
-	protected $_password	= '';
-	protected $_cookie		= '';
-	protected $_ssl_mode	= false;
-	protected $_debug		= false;
-	protected $_curlopts	= array();
-	protected $_headers		= array();
+	protected $_config; // (array)
+	protected $_url; // (string)
+	protected $_username; // (string)
+	protected $_password; // (string)
+	protected $_cookie; // (string)
+	protected $_use_ssl; // (bool)
+	protected $_curlopts; // (array)
+	protected $_headers; // (array)
 
-    protected $_session			= null; // Contains the cURL handler for a session
-	protected $_method			= null;
-	protected $_error_code		= 0;
-	protected $_error_string	= '';
-	protected $_response		= '';
-	protected $_info			= array();
+    protected $_session; // (object) Contains the cURL handler for a session
+	protected $_method; // (string)
+	protected $_error_code; // (int)
+	protected $_error_string; // (string)
+	protected $_response; // (string)
+	protected $_info; // (array)
 
 	/**
 	 * Sets the initial Curl filename and local data.
@@ -70,19 +70,16 @@ class Curl
 			$config = $config_arr;
 		}
 
-		// Prep the connection
-		$this->_url			= (! is_null($config['url']))	? $config['url']				: $url;
-		$this->_username	= (isset($config['username']))	? $config['username']			: '';
-		$this->_password	= (isset($config['password']))	? $config['password']			: '';
-		$this->_cookie		= (isset($config['cookie']))	? $config['cookie']				: '';
-		$this->_ssl_mode	= (isset($config['ssl_mode']))	? (bool) $config['ssl_mode']	: false;
-		$this->_debug		= (isset($config['debug']))		? (bool) $config['debug']		: false;
-		$this->_options		= (isset($config['options']))	? $config['options']			: array();
-		$this->_headers		= (isset($config['headers']))	? $config['headers']			: array();
+		$this->_config = $config;
 
-		$url = (! is_null($url)) ? $url : (isset($config['url'])) ? $config['url'] : null;
-
-		($url) ? $this->initialize($url) : false;
+		if ($url)
+		{
+			$this->initialize($url);
+		}
+		else if (isset($this->_config['url']))
+		{
+			$this->initialize($this->_config['url']);
+		}
 	}
 
 	public function initialized() {
@@ -101,13 +98,21 @@ class Curl
 
 	public function reset()
 	{
+		// Prep the connection
+		$this->_url			= (isset($this->_config['url']))		? $this->_config['url']					: '';
+		$this->_username	= (isset($this->_config['username']))	? $this->_config['username']			: '';
+		$this->_password	= (isset($this->_config['password']))	? $this->_config['password']			: '';
+		$this->_cookie		= (isset($this->_config['cookie']))		? $this->_config['cookie']				: '';
+		$this->_use_ssl		= (isset($this->_config['use_ssl']))	? (bool) $this->_config['use_ssl']		: false;
+		$this->_options		= (isset($this->_config['options']))	? $this->_config['options']				: array();
+		$this->_headers		= (isset($this->_config['headers']))	? $this->_config['headers']				: array();
+
+		$this->_session			= null;
 		$this->_method			= '';
 		$this->_error_code		= 0;
 		$this->_error_string	= '';
 		$this->_response		= '';
 		$this->_info			= array();
-		$this->_session			= null;
-		$this->_url				= '';
 
 		$this->add_curl_options(
 			array(
@@ -123,7 +128,7 @@ class Curl
 			$this->add_curl_option(CURLOPT_FOLLOWLOCATION, true);
 		}
 
-		if($this->_ssl_mode === true)
+		if($this->_use_ssl === true)
 		{
 			$this->set_ssl($this->_verify_peer, $this->_verify_host, $this->_path_to_cert);
 		}
@@ -268,6 +273,38 @@ class Curl
 		$this->_headers[] = $content ? "$header: $content" : $header;
 	}
 
+	public function set_cookies($params = array())
+	{
+		if (is_array($params))
+		{
+			$params = http_build_query($params, NULL, '; ');
+		}
+
+		$this->option(CURLOPT_COOKIE, $params);
+		return $this;
+	}
+
+	public function http_login($username = '', $password = '', $type = 'any')
+	{
+		$this->option(CURLOPT_HTTPAUTH, constant('CURLAUTH_'.strtoupper($type) ));
+		$this->option(CURLOPT_USERPWD, $username.':'.$password);
+		return $this;
+	}
+
+	public function proxy($url = '', $port = 80)
+	{
+		$this->option(CURLOPT_HTTPPROXYTUNNEL, TRUE);
+		$this->option(CURLOPT_PROXY, $url.':'. $port);
+		return $this;
+	}
+
+	public function proxy_login($username = '', $password = '', $type = 'any')
+	{
+		$this->option(CURLOPT_PROXYAUTH, constant('CURLAUTH_'.strtoupper($type) ));
+		$this->option(CURLOPT_PROXYUSERPWD, $username.':'.$password);
+		return $this;
+	}
+
 	public function response()
 	{
 		return $this->_response;
@@ -334,42 +371,6 @@ class Curl
 		echo "<h3>response</h3>\n";
 		echo "<code>".nl2br(htmlentities($this->_response))."</code><br/>\n\n";
 	}
-
-
-
-
-    public function http_login($username = '', $password = '', $type = 'any')
-    {
-		$this->option(CURLOPT_HTTPAUTH, constant('CURLAUTH_'.strtoupper($type) ));
-        $this->option(CURLOPT_USERPWD, $username.':'.$password);
-        return $this;
-    }
-
-    public function proxy($url = '', $port = 80)
-    {
-        $this->option(CURLOPT_HTTPPROXYTUNNEL, TRUE);
-        $this->option(CURLOPT_PROXY, $url.':'. $port);
-        return $this;
-    }
-
-    public function proxy_login($username = '', $password = '')
-    {
-        $this->option(CURLOPT_PROXYUSERPWD, $username.':'.$password);
-        return $this;
-    }
-
-    public function set_cookies($params = array())
-    {
-        if (is_array($params))
-        {
-            $params = http_build_query($params, NULL, '&');
-        }
-
-        $this->option(CURLOPT_COOKIE, $params);
-        return $this;
-    }
-
-
 
 }
 
