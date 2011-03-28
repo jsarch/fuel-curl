@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -60,7 +60,9 @@ class Crypt {
 		static::$have_mcrypt = function_exists('mcrypt_encrypt');
 
 		// load the config
-		$config = \Config::load('crypt', true);
+		\Config::load('crypt', true);
+
+		$config = \Config::get('crypt', array ());
 
 		// update the defaults with the configed values
 		foreach($config as $key => $value)
@@ -205,7 +207,7 @@ class Crypt {
 			if (substr($value,0,2) == '1:')
 			{
 				// houston, we have a problem!
-				throw new \Exception('Encrypted string was encrypted using the PHP mcrypt library, which is not loaded on this system.');
+				throw new \Fuel_Exception('Encrypted string was encrypted using the PHP mcrypt library, which is not loaded on this system.');
 			}
 
 			$value = substr($value,2);

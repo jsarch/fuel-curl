@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -144,9 +144,9 @@ class Form {
 		$attributes = ! is_array($attributes) ? array('action' => (string) $attributes) : $attributes;
 
 		// If there is still no action set, Form-post
-		if(empty($attributes['action']))
+		if( ! array_key_exists('action', $attributes))
 		{
-			$attributes['action'] = '';
+			$attributes['action'] = \Uri::current();
 		}
 
 		// If not a full URL, create one
@@ -157,7 +157,7 @@ class Form {
 
 		if (empty($attributes['accept-charset']))
 		{
-			$attributes['accept-charset'] = strtolower(INTERNAL_ENC);
+			$attributes['accept-charset'] = strtolower(\Fuel::$encoding);
 		}
 
 		// If method is empty, use POST
@@ -213,7 +213,7 @@ class Form {
 
 		if ( ! in_array($attributes['type'], static::$_valid_inputs))
 		{
-			throw new \Exception(sprintf('"%s" is not a valid input type.', $attributes['type']));
+			throw new \Fuel_Exception(sprintf('"%s" is not a valid input type.', $attributes['type']));
 		}
 
 		if (static::get_class_config('prep_value', true) && empty($attributes['dont_prep']))
@@ -443,7 +443,7 @@ class Form {
 	 * @param	array
 	 * @return	string
 	 */
-	public static function select($field, $value = null, Array $options = array(), Array $attributes = array())
+	public static function select($field, $values = null, Array $options = array(), Array $attributes = array())
 	{
 		if (is_array($field))
 		{
@@ -452,7 +452,7 @@ class Form {
 		else
 		{
 			$attributes['name'] = (string) $field;
-			$attributes['selected'] = (string) $value;
+			$attributes['selected'] = $values;
 			$attributes['options'] = $options;
 		}
 
@@ -461,14 +461,14 @@ class Form {
 
 		if ( ! isset($attributes['options']) || ! is_array($attributes['options']))
 		{
-			throw new \Exception(sprintf('Select element "%s" is either missing the "options" or "options" is not array.', $attributes['name']));
+			throw new \Fuel_Exception(sprintf('Select element "%s" is either missing the "options" or "options" is not array.', $attributes['name']));
 		}
 		// Get the options then unset them from the array
 		$options = $attributes['options'];
 		unset($attributes['options']);
 
 		// Get the selected options then unset it from the array
-		$selected = empty($attributes['selected']) ? false : $attributes['selected'];
+		$selected = empty($attributes['selected']) ? array() : array_values((array) $attributes['selected']);
 		unset($attributes['selected']);
 
 		$input = PHP_EOL;
@@ -480,7 +480,7 @@ class Form {
 				foreach ($val as $opt_key => $opt_val)
 				{
 					$opt_attr = array('value' => $opt_key);
-					($opt_key == $selected) && $opt_attr[] = 'selected';
+					(in_array($opt_key, $selected)) && $opt_attr[] = 'selected';
 					$optgroup .= str_repeat("\t", 2);
 					$opt_attr['value'] = (static::get_class_config('prep_value', true) && empty($attributes['dont_prep'])) ?
 						static::prep_value($opt_attr['value']) : $opt_attr['value'];
@@ -492,7 +492,7 @@ class Form {
 			else
 			{
 				$opt_attr = array('value' => $key);
-				($key == $selected) && $opt_attr[] = 'selected';
+				(in_array($key, $selected)) && $opt_attr[] = 'selected';
 				$input .= str_repeat("\t", 1);
 				$opt_attr['value'] = (static::get_class_config('prep_value', true) && empty($attributes['dont_prep'])) ?
 					static::prep_value($opt_attr['value']) : $opt_attr['value'];

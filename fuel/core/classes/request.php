@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -29,9 +29,9 @@ class Request {
 	protected static $active = false;
 
 	/**
-	 * @var	array	search paths for the current active request
+	 * @var	object	Holds the previous request;
 	 */
-	public $paths = array();
+	protected static $previous = false;
 
 	/**
 	 * Generates a new request.  The request is then set to be the active
@@ -50,6 +50,11 @@ class Request {
 	public static function factory($uri = null, $route = true)
 	{
 		logger(Fuel::L_INFO, 'Creating a new Request with URI = "'.$uri.'"', __METHOD__);
+
+		if (static::$active)
+		{
+			static::$previous = static::$active;
+		}
 
 		static::$active = new static($uri, $route);
 
@@ -111,70 +116,65 @@ class Request {
 	{
 		logger(Fuel::L_INFO, 'Called', __METHOD__);
 
-		\Output::$status = 404;
+		// This ensures that show_404 is only called once.
+		static $call_count = 0;
+		$call_count++;
 
-		if (\Config::get('routes.404') === null)
+		if ($call_count > 1)
 		{
-			static::active()->output = \View::factory('404');
+			throw new \Fuel_Exception('It appears your _404_ route is incorrect.  Multiple Recursion has happened.');
+		}
+
+		if (\Config::get('routes._404_') === null)
+		{
+			$response = new \Response(\View::factory('404'), 404);
+
+			if ($return)
+			{
+				return $response;
+			}
+
+			$response->send(true);
+			exit;
 		}
 		else
 		{
-			list($controller, $action) = array_pad(explode('/', \Config::get('routes.404')), 2, false);
+			$request = \Request::factory(\Config::get('routes._404_'))->execute();
 
-			$action or $action = 'index';
-
-			$class = '\\Controller_'.ucfirst($controller);
-			$method = 'action_'.$action;
-
-			if (class_exists($class))
+			if ($return)
 			{
-				$controller = new $class(static::active());
-				if (method_exists($controller, $method))
-				{
-					// Call the before method if it exists
-					if (method_exists($controller, 'before'))
-					{
-						$controller->before();
-					}
-
-					$controller->{$method}();
-
-					// Call the after method if it exists
-					if (method_exists($controller, 'after'))
-					{
-						$controller->after();
-					}
-
-					// Get the controller's output
-					if ($return)
-					{
-						return $controller->output;
-					}
-
-					\Output::send_headers();
-					exit($controller->output);
-				}
-				else
-				{
-					throw new \Exception('404 Action not found.');
-				}
+				return $request->response;
 			}
-			else
-			{
-				throw new \Exception('404 Controller not found.');
-			}
+
+			$request->response->send(true);
+			exit;
 		}
 	}
+
+	public static function reset_request()
+	{
+		// Let's make the previous Request active since we are don't executing this one.
+		if (static::$previous)
+		{
+			static::$active = static::$previous;
+		}
+	}
+
 
 	/**
 	 * @var	string	Holds the response of the request.
 	 */
-	public $output = NULL;
+	public $response = null;
 
 	/**
 	 * @var	object	The request's URI object
 	 */
 	public $uri = '';
+
+	/**
+	 * @var	object	The request's route object
+	 */
+	public $route = null;
 
 	/**
 	 * @var	string	Controller module
@@ -212,6 +212,11 @@ class Request {
 	public $controller_instance;
 
 	/**
+	 * @var	array	search paths for the current active request
+	 */
+	public $paths = array();
+
+	/**
 	 * Creates the new Request object by getting a new URI object, then parsing
 	 * the uri with the Route class.
 	 *
@@ -220,40 +225,29 @@ class Request {
 	 * @param	bool	whether or not to route the URI
 	 * @return	void
 	 */
-	public function __construct($uri, $route)
+	public function __construct($uri, $route = true)
 	{
 		$this->uri = new \URI($uri);
-		$route = $route === true ? \Route::parse($this->uri) : \Route::parse_match($uri);
 
-		// Attempts to register the first segment as a module
-		$mod_path = \Fuel::add_module($route['segments'][0]);
+		$this->route = \Router::process($this, $route);
 
-		if ($mod_path !== false)
+		if ( ! $this->route)
 		{
-			$this->module = array_shift($route['segments']);
-			$this->paths = array($mod_path, $mod_path.'classes'.DS);
+			return false;
 		}
 
-		// Check for directory
-		$path = ( ! empty($this->module) ? $mod_path : APPPATH).'classes'.DS.'controller'.DS;
-		if ( ! empty($route['segments']) && is_dir($dirpath = $path.strtolower($route['segments'][0])))
+		if ($this->route->module !== null)
 		{
-			$this->directory = array_shift($route['segments']);
+			$this->module = $this->route->module;
+			\Fuel::add_module($this->module);
+			$this->add_path(\Fuel::module_exists($this->module));
 		}
 
-		// When emptied the controller defaults to directory or module
-		$controller = empty($this->directory) ? $this->module : $this->directory;
-		if (count($route['segments']) == 0)
-		{
-			$route['segments'] = array($controller);
-		}
-
-		$this->controller = $route['segments'][0];
-		$this->action = isset($route['segments'][1]) ? $route['segments'][1] : '';
-		$this->method_params = array_slice($route['segments'], 2);
-		$this->named_params = $route['named_params'];
-
-		unset($route);
+		$this->directory = $this->route->directory;
+		$this->controller = $this->route->controller;
+		$this->action = $this->route->action;
+		$this->method_params = $this->route->method_params;
+		$this->named_params = $this->route->named_params;
 	}
 
 	/**
@@ -270,40 +264,29 @@ class Request {
 	{
 		logger(Fuel::L_INFO, 'Called', __METHOD__);
 
+		if ( ! $this->route)
+		{
+			$this->response = static::show_404(true);
+			static::reset_request();
+			return $this;
+		}
+
 		$controller_prefix = '\\'.($this->module ? ucfirst($this->module).'\\' : '').'Controller_';
 		$method_prefix = 'action_';
 
 		$class = $controller_prefix.($this->directory ? ucfirst($this->directory).'_' : '').ucfirst($this->controller);
 		$method = $this->action;
 
-		// Allow omitting the controller name when in an equally named directory or module
+		// If the class doesn't exist then 404
 		if ( ! class_exists($class))
 		{
-			// set the new controller to directory or module when applicable
-			$controller = $this->directory ?: $this->module;
-			// ... or to the default controller if it was in neither
-			$controller = $controller ?: preg_replace('#/([a-z0-9/_]*)$#uiD', '', \Route::$routes['#']);
-
-			// try again with new controller if it differs from the previous attempt
-			if ($controller != $this->controller)
-			{
-				$class = $controller_prefix.($this->directory ? $this->directory.'_' : '').ucfirst($controller);
-				array_unshift($this->method_params, $this->action);
-				$this->action = $this->controller;
-				$method = $this->action ?: '';
-				$this->controller = $controller;
-			}
-
-			// 404 if it's still not found
-			if ( ! class_exists($class))
-			{
-				$this->output = static::show_404(true);
-				return $this;
-			}
+			$this->response = static::show_404(true);
+			static::reset_request();
+			return $this;
 		}
 
 		logger(Fuel::L_INFO, 'Loading controller '.$class, __METHOD__);
-		$this->controller_instance = $controller = new $class($this);
+		$this->controller_instance = $controller = new $class($this, new \Response);
 
 		$method = $method_prefix.($method ?: (property_exists($controller, 'default_action') ? $controller->default_action : 'index'));
 
@@ -315,7 +298,7 @@ class Request {
 			$this->method_params = array($this->action, $this->method_params);
 		}
 
-		if (method_exists($controller, $method))
+		if (is_callable(array($controller, $method)))
 		{
 			// Call the before method if it exists
 			if (method_exists($controller, 'before'))
@@ -335,26 +318,50 @@ class Request {
 			}
 
 			// Get the controller's output
-			$this->output =& $controller->output;
+			$this->response =& $controller->response;
 		}
 		else
 		{
-			$this->output = static::show_404(true);
+			$this->response = static::show_404(true);
 		}
 
+		static::reset_request();
 		return $this;
 	}
 
-	public function send_headers()
+	public function response()
 	{
-		\Output::send_headers();
-
-		return $this;
+		return $this->response;
 	}
 
-	public function output()
+	/**
+	 * Add to paths which are used by Fuel::find_file()
+	 *
+	 * @param  string  the new path
+	 * @param  bool    whether to add to the front or the back of the array
+	 */
+	public function add_path($path, $prefix = false)
 	{
-		echo $this->output;
+		if ($prefix)
+		{
+			// prefix the path to the paths array
+			array_unshift($this->paths, $path);
+		}
+		else
+		{
+			// add the new path
+			$this->paths[] = $path;
+		}
+	}
+
+	/**
+	 * Returns the array of currently loaded search paths.
+	 *
+	 * @return  array  the array of paths
+	 */
+	public function get_paths()
+	{
+		return $this->paths;
 	}
 
 	/**
@@ -372,7 +379,7 @@ class Request {
 	 */
 	public function __toString()
 	{
-		return (string) $this->output;
+		return (string) $this->response;
 	}
 }
 

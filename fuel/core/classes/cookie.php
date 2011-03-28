@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -50,7 +50,7 @@ class Cookie {
 	/**
 	 * @var  boolean  Only transmit cookies over HTTP, disabling Javascript access
 	 */
-	public static $httponly = false;
+	public static $http_only = false;
 
 	/**
 	 * Gets the value of a signed cookie. Cookies without signatures will not
@@ -107,7 +107,7 @@ class Cookie {
 			$domain = static::$domain;
 		}
 
-		return setcookie($name, $value, $expiration, $path, $domain, static::$secure, static::$httponly);
+		return setcookie($name, $value, $expiration, $path, $domain, static::$secure, static::$http_only);
 	}
 
 	/**

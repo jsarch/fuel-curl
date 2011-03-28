@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -47,6 +47,8 @@ class Fuel {
 
 	public static $locale;
 
+	public static $encoding = 'UTF-8';
+
 	public static $path_cache = array();
 
 	public static $caching = false;
@@ -62,6 +64,7 @@ class Fuel {
 	public static $paths_changed = false;
 
 	public static $is_cli = false;
+	public static $is_test = false;
 
 	protected static $_paths = array();
 
@@ -79,7 +82,7 @@ class Fuel {
 	{
 		if (static::$initialized)
 		{
-			throw new \Exception("You can't initialize Fuel more than once.");
+			throw new \Fuel_Exception("You can't initialize Fuel more than once.");
 		}
 
 		register_shutdown_function('fuel_shutdown_handler');
@@ -108,9 +111,14 @@ class Fuel {
 
 		\Config::load($config);
 
-		static::$_paths = array_merge(\Config::get('module_paths', array()), array(APPPATH, COREPATH));
+		static::$_paths = array(APPPATH, COREPATH);
 
-		static::$is_cli = (bool) (php_sapi_name() == 'cli');
+		// Load in the routes
+		\Config::load('routes', true);
+
+		\Router::add(\Config::get('routes'));
+
+		\View::$auto_encode = \Config::get('security.auto_encode_view_data');
 
 		if ( ! static::$is_cli)
 		{
@@ -197,13 +205,14 @@ class Fuel {
 	/**
 	 * Finds a file in the given directory.  It allows for a cascading filesystem.
 	 *
-	 * @access	public
-	 * @param	string	The directory to look in.
-	 * @param	string	The name of the file
-	 * @param	string	The file extension
-	 * @return	string	The path to the file
+	 * @param   string   The directory to look in.
+	 * @param   string   The name of the file
+	 * @param   string   The file extension
+	 * @param   boolean  if true return an array of all files found
+	 * @param   boolean  if false do not cache the result
+	 * @return  string   the path to the file
 	 */
-	public static function find_file($directory, $file, $ext = '.php', $multiple = false)
+	public static function find_file($directory, $file, $ext = '.php', $multiple = false, $cache = true)
 	{
 		$path = $directory.DS.strtolower($file).$ext;
 
@@ -235,8 +244,38 @@ class Fuel {
 			}
 		}
 
-		static::$path_cache[$path] = $found;
-		static::$paths_changed = true;
+		if ( ! empty($found))
+		{
+			$cache and static::$path_cache[$path] = $found;
+			static::$paths_changed = true;
+		}
+
+		return $found;
+	}
+
+	/**
+	 * Gets a list of all the files in a given directory inside all of the
+	 * loaded search paths (e.g. the cascading file system).  This is useful
+	 * for things like finding all the config files in all the search paths.
+	 *
+	 * @param   string  The directory to look in
+	 * @param   string  The file filter
+	 * @return  array   the array of files
+	 */
+	public static function list_files($directory = null, $filter = '*.php')
+	{
+		$paths = static::$_paths;
+		// get the paths of the active request, and search them first
+		if (class_exists('Request', false) and $active = \Request::active())
+		{
+			$paths = array_merge($active->paths, $paths);
+		}
+
+		$found = array();
+		foreach ($paths as $path)
+		{
+			$found = array_merge(glob($path.$directory.'/'.$filter), $found);
+		}
 
 		return $found;
 	}
@@ -244,7 +283,7 @@ class Fuel {
 	/**
 	 * Generates a base url.
 	 *
-	 * @return	string	the base url
+	 * @return  string  the base url
 	 */
 	protected static function generate_base_url()
 	{
@@ -266,8 +305,8 @@ class Fuel {
 	/**
 	 * Add to paths which are used by Fuel::find_file()
 	 *
-	 * @param	string	the new path
-	 * @param	bool	whether to add just behind the APPPATH or to prefix
+	 * @param  string  the new path
+	 * @param  bool    whether to add just behind the APPPATH or to prefix
 	 */
 	public static function add_path($path, $prefix = false)
 	{
@@ -285,17 +324,21 @@ class Fuel {
 		}
 	}
 
+	/**
+	 * Returns the array of currently loaded search paths.
+	 *
+	 * @return  array  the array of paths
+	 */
 	public static function get_paths()
 	{
 		return static::$_paths;
 	}
 
 	/**
-	 * Loading in the given file
+	 * Includes the given file and returns the results.
 	 *
-	 * @access	public
-	 * @param	string	The path to the file
-	 * @return	mixed	The results of the include
+	 * @param   string  the path to the file
+	 * @return  mixed   the results of the include
 	 */
 	public static function load($file)
 	{
@@ -310,9 +353,8 @@ class Fuel {
 	 * static::add_package('foo');
 	 * static::add_package(array('foo' => PKGPATH.'bar/foo/'));
 	 *
-	 * @access	public
-	 * @param	array|string	the package name or array of packages
-	 * @return	void
+	 * @param   array|string  the package name or array of packages
+	 * @return  void
 	 */
 	public static function add_package($package)
 	{
@@ -335,9 +377,8 @@ class Fuel {
 	/**
 	 * Removes a package from the stack.
 	 *
-	 * @access	public
-	 * @param	string	the package name
-	 * @return	void
+	 * @param   string  the package name
+	 * @return  void
 	 */
 	public static function remove_package($name)
 	{
@@ -350,12 +391,12 @@ class Fuel {
 	 * Registers a given module as a class prefix and returns the path to the
 	 * module. Won't register twice, will just return the path on a second call.
 	 *
-	 * @param	string	module name (lowercase prefix without underscore)
-	 * @param	bool	whether it is an loaded package
+	 * @param   string  module name (lowercase prefix without underscore)
+	 * @return  string  the path that was loaded
 	 */
-	public static function add_module($name, $loaded = false)
+	public static function add_module($name)
 	{
-		if ( ! $path = Autoloader::namespace_path('\\'.ucfirst($name)))
+		if ( ! $path = \Autoloader::namespace_path('\\'.ucfirst($name)))
 		{
 			$paths = \Config::get('module_paths', array());
 
@@ -370,7 +411,7 @@ class Fuel {
 				{
 					$path = $mod_check_path;
 					$ns = '\\'.ucfirst($name);
-					Autoloader::add_namespaces(array(
+					\Autoloader::add_namespaces(array(
 						$ns					=> $path.'classes'.DS,
 					), true);
 					break;
@@ -383,26 +424,37 @@ class Fuel {
 			$path = substr($path,0, -8);
 		}
 
-		if ($loaded)
-		{
-			// add the module path
-			static::add_path($path);
+		return $path;
+	}
 
-			// get the path for this modules namespace
-			if ( $path = Autoloader::namespace_path('\\'.ucfirst($name)))
+	/**
+	 * Checks to see if a module exists or not.
+	 *
+	 * @param	string	the module name
+	 * @return	bool	whether it exists or not
+	 */
+	public static function module_exists($module)
+	{
+		$paths = \Config::get('module_paths', array());
+
+		foreach ($paths as $path)
+		{
+			if (is_dir($path.$module))
 			{
-				// add the namespace path too
-				static::add_path($path);
+				return $path.$module.DS;
 			}
 		}
-
-		return $path;
+		return false;
 	}
 
 	/**
 	 * This method does basic filesystem caching.  It is used for things like path caching.
 	 *
 	 * This method is from KohanaPHP's Kohana class.
+	 *
+	 * @param  string  the cache name
+	 * @param  array   the data to cache (if non given it returns)
+	 * @param  int     the number of seconds for the cache too live
 	 */
 	public static function cache($name, $data = null, $lifetime = null)
 	{
@@ -418,14 +470,14 @@ class Fuel {
 			$lifetime = static::$cache_lifetime;
 		}
 
-		if ($data === NULL)
+		if ($data === null)
 		{
 			if (is_file($dir.$file))
 			{
 				if ((time() - filemtime($dir.$file)) < $lifetime)
 				{
 					// Return the cache
-					return json_decode(file_get_contents($dir.$file), true);
+					return unserialize(file_get_contents($dir.$file));
 				}
 				else
 				{
@@ -456,7 +508,7 @@ class Fuel {
 		}
 
 		// Force the data to be a string
-		$data = json_encode($data);
+		$data = serialize($data);
 
 		try
 		{
@@ -473,7 +525,7 @@ class Fuel {
 	/**
 	 * Always load packages, modules, classes, config & language files set in always_load.php config
 	 *
-	 * @param	array	what to autoload
+	 * @param  array  what to autoload
 	 */
 	public static function always_load($array = null)
 	{
@@ -506,7 +558,7 @@ class Fuel {
 			{
 				if ( ! class_exists(ucfirst($class)))
 				{
-					throw new \Exception('Always load class does not exist.');
+					throw new \Fuel_Exception('Always load class does not exist.');
 				}
 			}
 		}
@@ -536,9 +588,8 @@ class Fuel {
 	/**
 	 * Cleans a file path so that it does not contain absolute file paths.
 	 *
-	 * @access	public
-	 * @param	string	the filepath
-	 * @return	string
+	 * @param   string  the filepath
+	 * @return  string  the clean path
 	 */
 	public static function clean_path($path)
 	{

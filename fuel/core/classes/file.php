@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -357,11 +357,11 @@ class File {
 
 		if ( ! is_file($path))
 		{
-			throw new \Exception('Cannot copy file: given path is not a file.');
+			throw new \Fuel_Exception('Cannot copy file: given path is not a file.');
 		}
 		elseif (file_exists($new_path))
 		{
-			throw new \Exception('Cannot copy file: new path already exists.');
+			throw new \Fuel_Exception('Cannot copy file: new path already exists.');
 		}
 		$return = copy($path, $new_path);
 
@@ -384,11 +384,11 @@ class File {
 
 		if ( ! is_dir($path))
 		{
-			throw new \Exception('Cannot copy directory: given path is not a directory.');
+			throw new \Fuel_Exception('Cannot copy directory: given path is not a directory.');
 		}
 		elseif (file_exists($new_path))
 		{
-			throw new \Exception('Cannot copy directory: new path already exists.');
+			throw new \Fuel_Exception('Cannot copy directory: new path already exists.');
 		}
 
 		$files = static::read_dir($path, -1, array(), $area);
@@ -425,7 +425,7 @@ class File {
 
 		if ( ! is_file($path))
 		{
-			throw new \Exception('Cannot delete file: given path "'.$path.'" is not a file.');
+			throw new \Fuel_Exception('Cannot delete file: given path "'.$path.'" is not a file.');
 		}
 
 		return unlink($path);
@@ -445,7 +445,7 @@ class File {
 		$path = rtrim(static::instance($area)->get_path($path, $area), '\\/').DS;
 		if ( ! is_dir($path))
 		{
-			throw new \Exception('Cannot delete directory: given path is not a directory.');
+			throw new \Fuel_Exception('Cannot delete directory: given path is not a directory.');
 		}
 
 		$files = static::read_dir($path, -1, array(), $area);
@@ -473,7 +473,7 @@ class File {
 			// abort if something went wrong
 			if ( ! $check)
 			{
-				throw new \Exception('Directory deletion aborted prematurely, part of the operation failed.');
+				throw new \Fuel_Exception('Directory deletion aborted prematurely, part of the operation failed.');
 			}
 		}
 
@@ -495,7 +495,7 @@ class File {
 	{
 		if (is_string($resource))
 		{
-			$resource = fopen($resource, 'w+');
+			$resource = fopen($resource, 'r+');
 		}
 
 		// If locks aren't used, don't lock

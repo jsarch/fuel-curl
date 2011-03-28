@@ -4,15 +4,13 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
-
-
 
 return array(
 
@@ -26,7 +24,7 @@ return array(
 	'paths' => array('assets/'),
 
 	/**
-	* URL to your CodeIgniter root. Typically this will be your base URL,
+	* URL to your Fuel root. Typically this will be your base URL,
 	* WITH a trailing slash:
 	*
 	* Config::get('base_url')

@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Harro "WanWizard" Verton
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -148,7 +148,7 @@ class Session_Db extends Session_Driver {
 			$result = \DB::update($this->config['table'])->set($session)->where('session_id', '=', $this->record->get('session_id'))->execute($this->config['database']);
 
 			// update went well?
-			if ($result)
+			if ($result !== false)
 			{
 				// then update the cookie
 				$this->_set_cookie();
@@ -225,7 +225,7 @@ class Session_Db extends Session_Driver {
 						}
 						if ($item === false)
 						{
-							throw new \Exception('You have specify a database to use database backed sessions.');
+							throw new \Fuel_Exception('You have specify a database to use database backed sessions.');
 						}
 					break;
 
@@ -233,7 +233,7 @@ class Session_Db extends Session_Driver {
 						// and a table name?
 						if ( empty($item) OR ! is_string($item))
 						{
-							throw new \Exception('You have specify a database table name to use database backed sessions.');
+							throw new \Fuel_Exception('You have specify a database table name to use database backed sessions.');
 						}
 					break;
 

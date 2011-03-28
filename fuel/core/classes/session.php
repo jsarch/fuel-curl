@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -114,7 +114,7 @@ class Session {
 			$class_instance = 'Fuel\\Core\\'.$class;
 			if (static::$_instances[$cookie] instanceof $class_instance)
 			{
-				throw new \Exception('You can not instantiate two different sessions using the same cookie name "'.$cookie.'"');
+				throw new \Fuel_Exception('You can not instantiate two different sessions using the same cookie name "'.$cookie.'"');
 			}
 		}
 		else

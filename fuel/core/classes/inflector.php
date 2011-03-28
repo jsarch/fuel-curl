@@ -4,11 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Dan Horrigan <http://dhorrigan.com>
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -101,7 +102,7 @@ class Inflector {
 		}
 		else
 		{
-			switch (($number % 10))
+			switch ($number % 10)
 			{
 				case 1:
 					return $number . 'st';
@@ -183,7 +184,7 @@ class Inflector {
 	 */
 	public static function camelize($underscored_word)
 	{
-		return preg_replace('/(^|_)(.)/e', "strtoupper('\\2')", strval($underscored_word));
+		return preg_replace('/(^|_)(.)/e', "strtoupper('\\1\\2')", strval($underscored_word));
 	}
 
 	/**
@@ -194,7 +195,7 @@ class Inflector {
 	 */
 	public static function underscore($camel_cased_word)
 	{
-		return strtolower(preg_replace('/([A-Z]+)([A-Z])/', '\1_\2', preg_replace('/([a-z\d])([A-Z])/', '\1_\2', strval($camel_cased_word))));
+		return \Str::lower(preg_replace('/([A-Z]+)([A-Z])/', '\1_\2', preg_replace('/([a-z\d])([A-Z])/', '\1_\2', strval($camel_cased_word))));
 	}
 
 	/**
@@ -207,79 +208,8 @@ class Inflector {
 	public static function ascii($str)
 	{
 		// Translate unicode characters to their simpler counterparts
-		$foreign_characters = array(
-			'/ä|æ|ǽ/' => 'ae',
-			'/ö|œ/' => 'oe',
-			'/ü/' => 'ue',
-			'/Ä/' => 'Ae',
-			'/Ü/' => 'Ue',
-			'/Ö/' => 'Oe',
-			'/À|Á|Â|Ã|Ä|Å|Ǻ|Ā|Ă|Ą|Ǎ|А/' => 'A',
-			'/à|á|â|ã|å|ǻ|ā|ă|ą|ǎ|ª|а/' => 'a',
-			'/Б/' => 'B',
-			'/б/' => 'b',
-			'/Ç|Ć|Ĉ|Ċ|Č|Ц/' => 'C',
-			'/ç|ć|ĉ|ċ|č|ц/' => 'c',
-			'/Ð|Ď|Đ|Д/' => 'D',
-			'/ð|ď|đ|д/' => 'd',
-			'/È|É|Ê|Ë|Ē|Ĕ|Ė|Ę|Ě|Е|Ё|Э/' => 'E',
-			'/è|é|ê|ë|ē|ĕ|ė|ę|ě|е|ё|э/' => 'e',
-			'/Ф/' => 'F',
-			'/ƒ|ф/' => 'f',
-			'/Ĝ|Ğ|Ġ|Ģ|Г/' => 'G',
-			'/ĝ|ğ|ġ|ģ|г/' => 'g',
-			'/Ĥ|Ħ|Х/' => 'H',
-			'/ĥ|ħ|х/' => 'h',
-			'/Ì|Í|Î|Ï|Ĩ|Ī|Ĭ|Ǐ|Į|İ|И/' => 'I',
-			'/ì|í|î|ï|ĩ|ī|ĭ|ǐ|į|ı|и/' => 'i',
-			'/Ĵ|Й/' => 'J',
-			'/ĵ|й/' => 'j',
-			'/Ķ|К/' => 'K',
-			'/ķ|к/' => 'k',
-			'/Ĺ|Ļ|Ľ|Ŀ|Ł|Л/' => 'L',
-			'/ĺ|ļ|ľ|ŀ|ł|л/' => 'l',
-			'/М/' => 'M',
-			'/м/' => 'm',
-			'/Ñ|Ń|Ņ|Ň|Н/' => 'N',
-			'/ñ|ń|ņ|ň|ŉ|н/' => 'n',
-			'/Ò|Ó|Ô|Õ|Ō|Ŏ|Ǒ|Ő|Ơ|Ø|Ǿ|О/' => 'O',
-			'/ò|ó|ô|õ|ō|ŏ|ǒ|ő|ơ|ø|ǿ|º|о/' => 'o',
-			'/П/' => 'P',
-			'/п/' => 'p',
-			'/Ŕ|Ŗ|Ř|Р/' => 'R',
-			'/ŕ|ŗ|ř|р/' => 'r',
-			'/Ś|Ŝ|Ş|Š|С/' => 'S',
-			'/ś|ŝ|ş|š|ſ|с/' => 's',
-			'/Ţ|Ť|Ŧ|Т/' => 'T',
-			'/ţ|ť|ŧ|т/' => 't',
-			'/Ù|Ú|Û|Ũ|Ū|Ŭ|Ů|Ű|Ų|Ư|Ǔ|Ǖ|Ǘ|Ǚ|Ǜ|У/' => 'U',
-			'/ù|ú|û|ũ|ū|ŭ|ů|ű|ų|ư|ǔ|ǖ|ǘ|ǚ|ǜ|у/' => 'u',
-			'/В/' => 'V',
-			'/в/' => 'v',
-			'/Ý|Ÿ|Ŷ|Ы/' => 'Y',
-			'/ý|ÿ|ŷ|ы/' => 'y',
-			'/Ŵ/' => 'W',
-			'/ŵ/' => 'w',
-			'/Ź|Ż|Ž|З/' => 'Z',
-			'/ź|ż|ž|з/' => 'z',
-			'/Æ|Ǽ/' => 'AE',
-			'/ß/'=> 'ss',
-			'/Ĳ/' => 'IJ',
-			'/ĳ/' => 'ij',
-			'/Œ/' => 'OE',
-			'/Ч/' => 'Ch',
-			'/ч/' => 'ch',
-			'/Ю/' => 'Ju',
-			'/ю/' => 'ju',
-			'/Я/' => 'Ja',
-			'/я/' => 'ja',
-			'/Ш/' => 'Sh',
-			'/ш/' => 'sh',
-			'/Щ/' => 'Shch',
-			'/щ/' => 'shch',
-			'/Ж/' => 'Zh',
-			'/ж/' => 'zh',
-		);
+		\Config::load('ascii', true);
+		$foreign_characters = \Config::get('ascii');
 
 		$str = preg_replace(array_keys($foreign_characters), array_values($foreign_characters), $str);
 
@@ -304,12 +234,14 @@ class Inflector {
 		$str = html_entity_decode($str, ENT_QUOTES, 'UTF-8');
 
 		$trans = array(
-			'\s+' => $sep,					// one or more spaces => seperator
-			$sep.'+' => $sep,				// multiple seperators => 1 seperator
-			$sep.'$' => '',					// ending seperator => (nothing)
-			'^'.$sep => '',					// starting seperator => (nothing)
-			'\.+$' => ''					// ending dot => (nothing)
+			'\s+' => $sep,        // one or more spaces => seperator
+			$sep.'+' => $sep,   // multiple seperators => 1 seperator
+			$sep.'$' => '',	        // ending seperator => (nothing)
+			'^'.$sep => '',         // starting seperator => (nothing)
+			'\.+$' => '',            // ending dot => (nothing)
+			'\?' => ''                // question mark
 		);
+
 		foreach ($trans as $key => $val)
 		{
 			$str = preg_replace("#".$key."#i", $val, $str);
@@ -322,23 +254,31 @@ class Inflector {
 
 		if ($lowercase === true)
 		{
-			$str = function_exists('mb_convert_case')
-				? mb_convert_case($str, MB_CASE_LOWER, 'UTF-8')
-				: strtolower($str);
+			$str = \Str::lower($str);
 		}
 
 		return $str;
 	}
 
 	/**
-	 * Turns an underscore separated word and turns it into a human looking string.
+	 * Turns an underscore or dash separated word and turns it into a human looking string.
 	 *
-	 * @param	string	$lower_case_and_underscored_word	the word
-	 * @return	string	the human version of $lower_case_and_underscored_word
+	 * @param	string	$str	the word
+	 * @param	string	the separator (either _ or -)
+	 * @param	bool	lowercare string and upper case first
+	 * @return	string	the human version of given string
 	 */
-	public static function humanize($lower_case_and_underscored_word)
+	public static function humanize($str, $sep = '_', $lowercase = true)
 	{
-		return ucfirst(strtolower(str_replace('_', " ", strval($lower_case_and_underscored_word))));
+		// Allow dash, otherwise default to underscore
+		$sep = $sep != '-' ? '_' : $sep;
+
+		if ($lowercase === true)
+		{
+			$str = \Str::ucfirst($str);
+		}
+
+		return str_replace($sep, " ", strval($str));
 	}
 
 	/**
@@ -382,7 +322,7 @@ class Inflector {
 		{
 			$class_name = substr($class_name, 6);
 		}
-		return strtolower(static::pluralize(static::underscore($class_name)));
+		return \Str::lower(static::pluralize(static::underscore($class_name)));
 	}
 
 	/**
@@ -405,7 +345,7 @@ class Inflector {
 	 */
 	public static function foreign_key($class_name, $use_underscore = true)
 	{
-		$class_name = static::denamespace(strtolower($class_name));
+		$class_name = static::denamespace(\Str::lower($class_name));
 		if (strncasecmp($class_name, 'Model_', 6) === 0)
 		{
 			$class_name = substr($class_name, 6);
@@ -421,7 +361,7 @@ class Inflector {
 	 */
 	public static function is_countable($word)
 	{
-		return ! (\in_array(\strtolower(\strval($word)), static::$uncountable_words));
+		return ! (\in_array(\Str::lower(\strval($word)), static::$uncountable_words));
 	}
 }
 

@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -113,6 +113,26 @@ class Security {
 		return $var;
 	}
 
+	public static function xss_clean($value)
+	{
+		if ( ! is_array($value))
+		{
+			if ( ! function_exists('htmLawed'))
+			{
+				import('htmlawed/htmlawed', 'vendor');
+			}
+
+			return htmLawed($value, array('safe' => 1, 'balanced' => 0));
+		}
+
+		foreach ($value as $k => $v)
+		{
+			$value[$k] = static::xss_clean($v);
+		}
+
+		return $value;
+	}
+
 	public static function strip_tags($value)
 	{
 		if ( ! is_array($value))
@@ -132,16 +152,36 @@ class Security {
 
 	public static function htmlentities($value)
 	{
-		if ( ! is_array($value))
+		if (is_string($value))
 		{
-			$value = htmlentities($value, ENT_COMPAT, INTERNAL_ENC);
+			$value = htmlentities($value, ENT_COMPAT, \Fuel::$encoding, false);
 		}
-		else
+		elseif (is_array($value) || $value instanceof \Iterator)
 		{
 			foreach ($value as $k => $v)
 			{
-				$value[$k] = static::htmlentities($v, ENT_COMPAT, INTERNAL_ENC);
+				$value[$k] = static::htmlentities($v);
 			}
+		}
+		elseif (is_object($value))
+		{
+			// Check if the object is whitelisted and return when that's the case
+			foreach (\Config::get('security.whitelisted_classes') as $class)
+			{
+				if (is_a($value, $class))
+				{
+					return $value;
+				}
+			}
+
+			// Throw exception when it wasn't whitelisted and can't be converted to String
+			if ( ! method_exists($value, '__toString'))
+			{
+				throw new \Fuel_Exception('Object class was not whitelisted in security.whitelisted_classes and could '.
+					'not be converted to string.');
+			}
+
+			$value = static::htmlentities((string) $value);
 		}
 
 		return $value;

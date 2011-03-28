@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -341,7 +341,7 @@ class Upload {
 				{
 					$files[$key]['error'] = static::UPLOAD_ERR_MIME_BLACKLISTED;
 				}
-				elseif ( ! empty(static::$config['ext_whitelist']) and ! in_array($files[$key]['mimetype'], (array) static::$config['ext_whitelist']))
+				elseif ( ! empty(static::$config['mime_whitelist']) and ! in_array($files[$key]['mimetype'], (array) static::$config['mime_whitelist']))
 				{
 					$files[$key]['error'] = static::UPLOAD_ERR_MIME_NOT_WHITELISTED;
 				}

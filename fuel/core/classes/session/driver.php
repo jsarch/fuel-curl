@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Harro "WanWizard" Verton
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -496,7 +496,7 @@ abstract class Session_Driver {
 		// make sure it doesn't exceed the cookie size specification
 		if (strlen($payload) > 4000)
 		{
-			throw new \Exception('The session data stored by the application in the cookie exceeds 4Kb. Select a different session storage driver.');
+			throw new \Fuel_Exception('The session data stored by the application in the cookie exceeds 4Kb. Select a different session storage driver.');
 		}
 
 		// write the session cookie
@@ -615,7 +615,7 @@ abstract class Session_Driver {
 	 */
 	protected function _unserialize($data)
 	{
-		$data = @unserialize(stripslashes($data));
+		$data = @unserialize($data);
 
 		if (is_array($data))
 		{

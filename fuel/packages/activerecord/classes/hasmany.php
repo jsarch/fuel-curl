@@ -4,16 +4,15 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace ActiveRecord;
-
 
 use \DB;
 
@@ -25,18 +24,20 @@ class HasMany extends Association {
 		{
 			if (($source->is_new_record() || $object->is_new_record()) && isset($this->options['through']) && $this->options['through'])
 			{
-				throw new \Exception("Has-many-through can't associate new records.", Exception::HasManyThroughCantAssociateNewRecords);
+				throw new \Fuel_Exception("Has-many-through can't associate new records.");
 			}
-			if (!$object instanceof $this->dest_class)
+			
+			if ( ! $object instanceof $this->dest_class)
 			{
-				throw new \Exception("Expected class: {$this->dest_class}; Received: " . get_class($object), Exception::UnexpectedClass);
+				throw new \Fuel_Exception("Expected class: {$this->dest_class}; Received: " . get_class($object));
 			}
+			
 			if ($source->is_new_record())
 			{
 				/* we want to save $object after $source gets saved */
 				$object->set_modified(true);
 			}
-			elseif ( ! isset($this->options['through']) || !$this->options['through'])
+			elseif ( ! isset($this->options['through']) || ! $this->options['through'])
 			{
 				/* since source exists, we always want to save $object */
 				$object->{$this->foreign_key} = $source->{$source->get_primary_key()};

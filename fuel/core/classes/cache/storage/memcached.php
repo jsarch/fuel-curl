@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Harro "WanWizard" Verton
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -37,6 +37,8 @@ class Cache_Storage_Memcached extends \Cache_Storage_Driver {
 
 	public function __construct($identifier, $config)
 	{
+		parent::__construct($identifier, $config);
+
 		$this->config = isset($config['memcached']) ? $config['memcached'] : array();
 
 		// make sure we have a memcache id
@@ -68,8 +70,6 @@ class Cache_Storage_Memcached extends \Cache_Storage_Driver {
 				throw new \Cache_Exception('Memcached sessions are configured, but there is no connection possible. Check your configuration.');
 			}
 		}
-
-		parent::__construct($identifier, $config);
 	}
 
 	// ---------------------------------------------------------------------
@@ -178,7 +178,7 @@ class Cache_Storage_Memcached extends \Cache_Storage_Driver {
 		{
 			if ($this->memcached->getResultCode() !== \Memcached::RES_NOTFOUND)
 			{
-				throw new \Exception('Memcached returned error code "'.$this->memcached->getResultCode().'" on delete. Check your configuration.');
+				throw new \Fuel_Exception('Memcached returned error code "'.$this->memcached->getResultCode().'" on delete. Check your configuration.');
 			}
 		}
 
@@ -246,7 +246,7 @@ class Cache_Storage_Memcached extends \Cache_Storage_Driver {
 		$payload = $this->prep_contents();
 
 		// write it to the memcached server
-		if ($this->memcached->set($key, $payload, is_numeric($this->expiration) ? $this->expiration : 0) === false)
+		if ($this->memcached->set($key, $payload, ! is_null($this->expiration) ? (int) $this->expiration : 0) === false)
 		{
 			throw new \Cache_Exception('Memcached returned error code "'.$this->memcached->getResultCode().'" on write. Check your configuration.');
 		}
@@ -295,14 +295,14 @@ class Cache_Storage_Memcached extends \Cache_Storage_Driver {
 		switch ($name)
 		{
 			case 'cache_id':
-				if ( empty($value) OR ! is_string($value))
+				if (empty($value) or ! is_string($value))
 				{
 					$value = 'fuel';
 				}
 			break;
 
 			case 'expiration':
-				if ( empty($value) OR ! is_numeric($value))
+				if (empty($value) or ! is_numeric($value))
 				{
 					$value = null;
 				}
@@ -321,12 +321,12 @@ class Cache_Storage_Memcached extends \Cache_Storage_Driver {
 					// do we have a host?
 					if ( ! isset($server['host']) OR ! is_string($server['host']))
 					{
-						throw new \Exception('Invalid Memcached server definition in the session configuration.');
+						throw new \Fuel_Exception('Invalid Memcached server definition in the session configuration.');
 					}
 					// do we have a port number?
 					if ( ! isset($server['port']) OR ! is_numeric($server['port']) OR $server['port'] < 1025 OR $server['port'] > 65535)
 					{
-						throw new \Exception('Invalid Memcached server definition in the session configuration.');
+						throw new \Fuel_Exception('Invalid Memcached server definition in the session configuration.');
 					}
 					// do we have a relative server weight?
 					if ( ! isset($server['weight']) OR ! is_numeric($server['weight']) OR $server['weight'] < 0)

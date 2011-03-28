@@ -4,12 +4,12 @@
  *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
- * @package		Fuel
- * @version		1.0
- * @author		Fuel Development Team
- * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
- * @link		http://fuelphp.com
+ * @package    Fuel
+ * @version    1.0
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2011 Fuel Development Team
+ * @link       http://fuelphp.com
  */
 
 namespace Fuel\Core;
@@ -123,7 +123,7 @@ class Validation {
 				$field->add_rule($rule);
 			}
 		}
-                
+
 		return $field;
 
 	}
@@ -176,7 +176,7 @@ class Validation {
 	{
 		if ( ! (is_object($class) || class_exists($class)))
 		{
-			throw new \Exception('Input for add_callable is not a valid object or class.');
+			throw new \Fuel_Exception('Input for add_callable is not a valid object or class.');
 		}
 
 		array_unshift($this->callables, $class);
@@ -207,7 +207,7 @@ class Validation {
 	 */
 	public function run($input = null, $allow_partial = false)
 	{
-		if (empty($input) && empty($_POST))
+		if (empty($input) && \Input::method() != 'POST')
 		{
 			return false;
 		}
